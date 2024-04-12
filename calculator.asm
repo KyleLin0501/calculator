@@ -38,11 +38,19 @@ IN2     LDA     #instr2         .將instr2的值透過直接定址載入A暫存�
         JSUB    READ2           .進入READ2
         JSUB    READ3           .進入READ3
         JSUB    COUNT           .進入COUNT
+        JSUB    CTOTAL          .進入CTOTAL
         J       AFTER           .跳轉到AFTER
 
 IN3     LDA     #instr3         .將instr3的值透過直接定址載入A暫存器 
         JSUB    echostr         .進入echostr
-        JSUB    READ3           .進入READ3
+        LDA     T1              .十位數(十進制數值)
+        ADD     #48             .ASCII code加48 (0)
+        WD	stdout          .將暫存器的值寫入 stdout
+        LDA     T2              .個位數(十進制數值)
+        ADD     #48             .ASCII code加48 (0)
+        WD	stdout          .將暫存器的值寫入 stdout
+        LDA     #10             .換行鍵ASCII code
+        WD	stdout          .將暫存器的值寫入 stdout
         J       AFTER           .跳轉到AFTER
 
 COUNT   LDA     OP              .載入OP到A暫存器
@@ -54,6 +62,8 @@ COUNT   LDA     OP              .載入OP到A暫存器
         JEQ     IS_MUL          .如果成立跳轉到IS_MUL
         COMP    #4              .暫存器A得值與4比較
         JEQ     IS_DIV          .如果成立跳轉到IS_DIV
+        JSUB    CTOTAL
+        RSUB
 
 IS_ADD  LDA     N               .載入N到A暫存器
         ADD     M               .A暫存器的值減M並存回A
@@ -118,7 +128,22 @@ READ3   CLEAR   A               .清除暫存器 A
         RD      INPUT           .從輸入設備讀取一個字元放入暫存器 A(ASCII code)
         SUB     #48             .減 ASCII code '0' 的值（48），存入暫存器 A
         STA     BUFFER          .將暫存器 A 的值存入 BUFFER(用來存放enter鍵)
-        RSUB            
+        RSUB                    .返回原先呼叫函式
+
+
+CTOTAL  LDA     TOTAL           .將TOTAL的值存入暫存器Ａ
+        DIV     #10             .將暫存器 A 的值除10
+        STA     T1              .將暫存器 A 的值存入 T1（十位數）
+        STA     tmp             .將暫存器 A 的值存入 tmp
+        LDA     tmp             .載入 tmp 到暫存器 A 
+        MUL     #10             .將暫存器 A 的值乘10
+        STA     tmp             .將暫存器 A 的值存入 tmp
+        LDA     TOTAL           .載入 TOTAL 到暫存器 A 
+        SUB     tmp             .將暫存器 A 的值減 tmp 的值
+        STA     T2              .將暫存器 A 的值存入 T2（個位數）
+        RSUB                    .返回原先呼叫函式
+
+
 
 
 addr	RESW	1
@@ -128,6 +153,9 @@ N       WORD    20              .第一個數字
 OP      WORD    3               .運算子（+:1,-:2,*:3,/:4)
 M       WORD    10              .第二個數字
 TOTAL   WORD    0               .運算結果
+T1      WORD    0               .十
+T2      WORD    0               .個
+tmp     WORD    0               .暫存
 BUFFER  WORD    0               .存放多於的enter鍵
 COUNTER WORD    0               .計數器用來判斷執行到哪個步驟
 
